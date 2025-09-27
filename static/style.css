@@ -1,0 +1,4 @@
+body { font-family: Arial, sans-serif; margin: 1rem 3rem; }
+header h1 { color: #2b7cff }
+table { border-collapse: collapse; width: 100%; margin-bottom: 1rem }
+td, th { border: 1px solid #ccc; padding: 8px }

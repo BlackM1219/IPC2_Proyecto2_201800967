@@ -1,0 +1,32 @@
+% extends 'base.html' %}
+{% block content %}
+<h2>Cargar configuración (XML)</h2>
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".xml">
+    <button type="submit">Cargar</button>
+</form>
+
+{% if data %}
+<h3>Invernaderos cargados</h3>
+<form action="/simulate" method="post">
+    <label for="invernadero">Seleccionar Invernadero</label>
+    <select name="invernadero">
+        {% for inv in data.iter() %}
+            <option value="{{inv.nombre}}">{{inv.nombre}}</option>
+        {% endfor %}
+    </select>
+    <label for="plan">Plan</label>
+    <select name="plan">
+        {% for inv in data.iter() %}
+            {% for p in inv.planes.iter() %}
+                <option value="{{p[0]}}">{{inv.nombre}} - {{p[0]}}</option>
+            {% endfor %}
+        {% endfor %}
+    </select>
+    <label for="t">Tiempo t (opcional) para graficar TDAs</label>
+    <input type="number" name="t" min="1">
+    <button type="submit">Simular</button>
+</form>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reporte: {{ results.invernadero.nombre }} — Plan: {{ results.plan_nombre }}</h2>
+<p>Tiempo óptimo (segundos): {{ results.tiempo_optimo }}</p>
+<h3>Eficiencia por dron</h3>
+<table>
+    <tr><th>Dron</th><th>Litros</th><th>Gramos</th></tr>
+    {% for item in results.eficiencia_por_dron.iter() %}
+        <tr>
+            <td>{{ item[0] }}</td>
+            <td>{{ item[1] }}</td>
+            <td>{{ item[2] }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<h3>Instrucciones por segundo</h3>
+<table>
+    <tr><th>Segundo</th><th>Acciones</th></tr>
+    {% for segundo, lista in results.acciones_lista %}
+        <tr>
+            <td>{{ segundo }}</td>
+            <td>
+                <ul>
+                {% for dr, acc in lista %}
+                    <li>{{ dr }} — {{ acc }}</li>
+                {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+<a href="/download/salida">Descargar salida.xml</a>
+{% endblock %}
