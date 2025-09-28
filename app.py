@@ -7,27 +7,21 @@ import os
 from config import UPLOAD_FOLDER
 
 
-
-
 def create_app():
     app = Flask(__name__)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.secret_key = 'dev-secret'
 
-
     parser = XMLParser()
-
 
     # memoria simple: carga actual
     app.config['data'] = None
     app.config['sim_results'] = None
 
-
     @app.route('/')
     def index():
         data = app.config.get('data')
         return render_template('index.html', data=data)
-
 
     @app.route('/upload', methods=['POST'])
     def upload():
@@ -45,7 +39,6 @@ def create_app():
         app.config['data'] = data
         flash('File loaded')
         return redirect(url_for('index'))
-
 
     @app.route('/simulate', methods=['POST'])
     def simulate():
@@ -71,6 +64,7 @@ def create_app():
         dot_path = graphgen.generate_tda_graph(results, time_t=t, outpath=os.path.join(app.config['UPLOAD_FOLDER'], 'tda.dot'))
         flash(f'Simulation complete. salida saved to {salida_path}')
         return render_template('report_invernadero.html', results=results, t=t)
+
     @app.route('/download/salida')
     def download_salida():
         path = os.path.join(app.config['UPLOAD_FOLDER'], 'salida.xml')
@@ -78,5 +72,5 @@ def create_app():
             return send_file(path, as_attachment=True)
         flash('No salida.xml available')
         return redirect(url_for('index'))
+
     return app
-    
