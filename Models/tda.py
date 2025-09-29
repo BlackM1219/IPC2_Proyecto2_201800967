@@ -1,74 +1,154 @@
-# Implementación de TDAs propios: ListaSimple, Cola, Pila (opcional)
+# ===========================================
+# TDA: Nodos básicos
+# ===========================================
 
-class Node:
-    def __init__(self, data=None):
-        self.data = data
-        self.next = None
-        self.prev = None
+class Nodo:
+    def __init__(self, dato):
+        self.dato = dato
+        self.siguiente = None
 
-class ListaSimple:
-    """Lista simple enlazada sin uso de list/dict/tuple."""
+
+# ===========================================
+# Lista Enlazada Simple
+# ===========================================
+
+class ListaEnlazada:
     def __init__(self):
-        self.head = None
-        self.size = 0
+        self.cabeza = None
+        self.cola = None
+        self.tamano = 0
 
-    def is_empty(self):
-        return self.head is None
-
-    def append(self, data):
-        node = Node(data)
-        if not self.head:
-            self.head = node
+    def append(self, dato):
+        """Agrega al final de la lista"""
+        nuevo = Nodo(dato)
+        if not self.cabeza:
+            self.cabeza = nuevo
+            self.cola = nuevo
         else:
-            cur = self.head
-            while cur.next:
-                cur = cur.next
-            cur.next = node
-        self.size += 1
+            self.cola.siguiente = nuevo
+            self.cola = nuevo
+        self.tamano += 1
+
+    def prepend(self, dato):
+        """Agrega al inicio de la lista"""
+        nuevo = Nodo(dato)
+        if not self.cabeza:
+            self.cabeza = nuevo
+            self.cola = nuevo
+        else:
+            nuevo.siguiente = self.cabeza
+            self.cabeza = nuevo
+        self.tamano += 1
+
+    def remove(self, dato):
+        """Elimina el primer nodo con ese dato"""
+        actual = self.cabeza
+        anterior = None
+        while actual:
+            if actual.dato == dato:
+                if anterior:
+                    anterior.siguiente = actual.siguiente
+                else:
+                    self.cabeza = actual.siguiente
+                if actual == self.cola:
+                    self.cola = anterior
+                self.tamano -= 1
+                return True
+            anterior = actual
+            actual = actual.siguiente
+        return False
+
+    def find(self, dato):
+        """Busca un dato y lo devuelve si existe"""
+        actual = self.cabeza
+        while actual:
+            if actual.dato == dato:
+                return actual.dato
+            actual = actual.siguiente
+        return None
 
     def iter(self):
-        cur = self.head
-        while cur:
-            yield cur.data
-            cur = cur.next
+        """Permite recorrer con for-in"""
+        actual = self.cabeza
+        while actual:
+            yield actual.dato
+            actual = actual.siguiente
 
-    def find(self, predicate):
-        cur = self.head
-        while cur:
-            if predicate(cur.data):
-                return cur.data
-            cur = cur.next
-        return None
+    def __len__(self):
+        return self.tamano
+
+    def __getitem__(self, index):
+        if index < 0 or index >= self.tamano:
+            raise IndexError("Índice fuera de rango")
+        actual = self.cabeza
+        for _ in range(index):
+            actual = actual.siguiente
+        return actual.dato
+
+    def __str__(self):
+        return "[" + ", ".join(str(x) for x in self.iter()) + "]"
+
+
+# ===========================================
+# Pila (Stack) usando Lista Enlazada
+# ===========================================
+
+class Pila:
+    def __init__(self):
+        self.lista = ListaEnlazada()
+
+    def push(self, dato):
+        self.lista.prepend(dato)
+
+    def pop(self):
+        if not self.lista.cabeza:
+            return None
+        dato = self.lista.cabeza.dato
+        self.lista.cabeza = self.lista.cabeza.siguiente
+        self.lista.tamano -= 1
+        if self.lista.tamano == 0:
+            self.lista.cola = None
+        return dato
+
+    def peek(self):
+        return self.lista.cabeza.dato if self.lista.cabeza else None
+
+    def is_empty(self):
+        return self.lista.tamano == 0
+
+    def __len__(self):
+        return len(self.lista)
+
+    def __str__(self):
+        return "Pila: " + str(self.lista)
+
+
+# ===========================================
+# Cola (Queue) usando Lista Enlazada
+# ===========================================
 
 class Cola:
     def __init__(self):
-        self.front = None
-        self.rear = None
-        self._size = 0
+        self.lista = ListaEnlazada()
 
-    def enqueue(self, data):
-        node = Node(data)
-        if not self.rear:
-            self.front = node
-            self.rear = node
-        else:
-            self.rear.next = node
-            self.rear = node
-        self._size += 1
+    def enqueue(self, dato):
+        self.lista.append(dato)
 
     def dequeue(self):
-        if not self.front:
+        if not self.lista.cabeza:
             return None
-        node = self.front
-        self.front = node.next
-        if not self.front:
-            self.rear = None
-        node.next = None
-        self._size -= 1
-        return node.data
+        dato = self.lista.cabeza.dato
+        self.lista.cabeza = self.lista.cabeza.siguiente
+        self.lista.tamano -= 1
+        if self.lista.tamano == 0:
+            self.lista.cola = None
+        return dato
 
     def is_empty(self):
-        return self.front is None
+        return self.lista.tamano == 0
 
-    def size(self):
-        return self._size
+    def __len__(self):
+        return len(self.lista)
+
+    def __str__(self):
+        return "Cola: " + str(self.lista)

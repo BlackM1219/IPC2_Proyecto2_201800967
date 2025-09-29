@@ -1,60 +1,86 @@
 import xml.etree.ElementTree as ET
 from models.dominio import Invernadero, Plant, Drone
-from models.tda import ListaSimple
+from models.tda import ListaEnlazada  # asumiendo que creaste esta TDA propia
+
 
 class XMLParser:
-    def parse(self, path):
-        tree = ET.parse(path)
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.drones = ListaEnlazada()
+        self.invernaderos = ListaEnlazada()
+
+    def parse(self):
+        tree = ET.parse(self.filepath)
         root = tree.getroot()
 
-        data = ListaSimple()  # lista de Invernaderos
+        # ------------------------------
+        # Cargar lista de drones
+        # ------------------------------
+        lista_drones = root.find("listaDrones")
+        if lista_drones is not None:
+            for nodo_dron in lista_drones.findall("dron"):
+                dron = Drone(
+                    id=nodo_dron.get("id"),
+                    nombre=nodo_dron.get("nombre")
+                )
+                self.drones.append(dron)
 
-        # parse listaDrones (global list) to map id -> name
-        drones_global = {}
-        listaDrones = root.find('listaDrones')
-        if listaDrones is not None:
-            for dr in listaDrones.findall('dron'):
-                id_ = dr.get('id')
-                nombre = dr.get('nombre')
-                drones_global[id_] = nombre
+        # ------------------------------
+        # Cargar invernaderos
+        # ------------------------------
+        lista_invernaderos = root.find("listaInvernaderos")
+        if lista_invernaderos is not None:
+            for nodo_inv in lista_invernaderos.findall("invernadero"):
+                inv = Invernadero(
+                    nombre=nodo_inv.get("nombre")
+                )
 
-        listaInvernaderos = root.find('listaInvernaderos')
-        if listaInvernaderos is None:
-            return data
+                # Plantas
+                plantas_xml = nodo_inv.find("plantas")
+                if plantas_xml is not None:
+                    for nodo_planta in plantas_xml.findall("planta"):
+                        planta = Plant(
+                            nombre=nodo_planta.text.strip(),
+                            hilera=int(nodo_planta.get("hilera")),
+                            posicion=int(nodo_planta.get("posicion")),
+                            litros=int(nodo_planta.get("litrosAgua")),
+                            gramos=int(nodo_planta.get("gramosFertilizante"))
+                        )
+                        inv.plantas.append(planta)
 
-        for inv in listaInvernaderos.findall('invernadero'):
-            nombre = inv.get('nombre') if inv.get('nombre') is not None else inv.findtext('nombre')
-            numeroHileras = inv.findtext('numeroHileras')
-            plantasXhilera = inv.findtext('plantasXhilera')
-            inv_obj = Invernadero(nombre, numeroHileras, plantasXhilera)
+                # Drones asignados al invernadero
+                drones_xml = nodo_inv.find("drones")
+                if drones_xml is not None:
+                    for nodo_dron in drones_xml.findall("dron"):
+                        dron_id = nodo_dron.get("id")
+                        # buscar dron en lista global
+                        dron_obj = self._buscar_dron_por_id(dron_id)
+                        if dron_obj:
+                            inv.drones.append(dron_obj)
 
-            listaPlantas = inv.find('listaPlantas')
-            if listaPlantas is not None:
-                for p in listaPlantas.findall('planta'):
-                    hilera = p.get('hilera')
-                    posicion = p.get('posicion')
-                    litros = p.get('litrosAgua')
-                    gramos = p.get('gramosFertilizante')
-                    especie = (p.text or '').strip()
-                    plant = Plant(hilera, posicion, litros, gramos, especie)
-                    inv_obj.agregar_planta(plant)
+                # Planes de riego
+                planes_xml = nodo_inv.find("planes")
+                if planes_xml is not None:
+                    for nodo_plan in planes_xml.findall("planRiego"):
+                        nombre_plan = nodo_plan.get("nombre")
+                        instrucciones = ListaEnlazada()
+                        for nodo_inst in nodo_plan.findall("instruccionRiego"):
+                            instrucciones.append({
+                                "hilera": int(nodo_inst.get("hilera")),
+                                "posicion": int(nodo_inst.get("posicion")),
+                                "accion": nodo_inst.text.strip()
+                            })
+                        inv.planes.append((nombre_plan, instrucciones))
 
-            asignacion = inv.find('asignacionDrones')
-            if asignacion is not None:
-                for a in asignacion.findall('dron'):
-                    id_ = a.get('id')
-                    hilera = a.get('hilera')
-                    nombre_d = drones_global.get(id_, f'DR{id_}')
-                    d = Drone(id_, nombre_d, hilera)
-                    inv_obj.asignar_dron(d)
+                self.invernaderos.append(inv)
 
-            planes = inv.find('planesRiego')
-            if planes is not None:
-                for plan in planes.findall('plan'):
-                    pname = plan.get('nombre')
-                    seq = (plan.text or '').strip()
-                    inv_obj.agregar_plan(pname, seq)
-
-            data.append(inv_obj)
-
-        return data
+    # ------------------------------
+    # Método auxiliar
+    # ------------------------------
+    def _buscar_dron_por_id(self, dron_id):
+        actual = self.drones.cabeza
+        while actual:
+            if actual.dato.id == dron_id:
+                return actual.dato
+            actual = actual.siguiente
+        return None
